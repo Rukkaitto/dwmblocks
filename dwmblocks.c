@@ -39,7 +39,7 @@ static int statusContinue = 1;
 static void (*writestatus) () = setroot;
 
 //opens process *cmd and stores output in *output
-void getcmd(const Block *block, char *output)
+void getcmd(const Block *block, char *output, int blockIndex)
 {
 	if (block->signal)
 	{
@@ -66,9 +66,11 @@ void getcmd(const Block *block, char *output)
 	int i = strlen(block->icon);
 	fgets(output+i, CMDLENGTH-i, cmdf);
 	i = strlen(output);
-	if (delim != '\0' && --i)
-		output[i++] = delim;
-	output[i++] = '\0';
+	if (delim != '\0' && --i && blockIndex != LENGTH(blocks) - 1) {
+      i++;
+      strcat(output, delim);
+   }
+	output[i+=sizeof(delim)] = '\0';
 	pclose(cmdf);
 }
 
@@ -79,7 +81,7 @@ void getcmds(int time)
 	{	
 		current = blocks + i;
 		if ((current->interval != 0 && time % current->interval == 0) || time == -1)
-			getcmd(current,statusbar[i]);
+			getcmd(current,statusbar[i],i);
 	}
 }
 
@@ -91,7 +93,7 @@ void getsigcmds(int signal)
 	{
 		current = blocks + i;
 		if (current->signal == signal)
-			getcmd(current,statusbar[i]);
+			getcmd(current,statusbar[i],i);
 	}
 }
 
@@ -187,7 +189,7 @@ int main(int argc, char** argv)
 	for(int i = 0; i < argc; i++)
 	{	
 		if (!strcmp("-d",argv[i]))
-			delim = argv[++i][0];
+         strcpy(delim, argv[++i]);
 		else if(!strcmp("-p",argv[i]))
 			writestatus = pstdout;
 	}
